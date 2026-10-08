@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echoes of Memory - A Journey Through Lucidity</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #050508;
+            color: #ececec;
+            user-select: none;
+            touch-action: none;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Analog Horror Screen & CRT Overlay */
+        .crt-overlay {
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            z-index: 15;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+            background-size: 100% 4px, 6px 100%;
+            opacity: 0.85;
+        }
+
+        #analog-noise-canvas {
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            z-index: 12;
+            opacity: 0;
+            mix-blend-mode: hard-light;
+            transition: opacity 0.4s ease;
+        }
+
+        .analog-flicker {
+            animation: vhs-flicker 0.12s infinite;
+        }
+
+        @keyframes vhs-flicker {
+            0% { opacity: 0.4; transform: scale(1) translate(0, 0); }
+            50% { opacity: 0.95; transform: scale(1.002) translate(-1px, 1px); }
+            100% { opacity: 0.5; transform: scale(0.999) translate(1px, -1px); }
+        }
+
+        .cinzel { font-family: 'Cinzel', serif; }
+        .mono { font-family: 'Space Mono', monospace; }
+
+        /* Glitch text effect for UI */
+        .glitch-text {
+            position: relative;
+            display: inline-block;
+        }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+        }
+        .glitch-active::before {
+            left: 2px;
+            text-shadow: -2px 0 #ff0055;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+        .glitch-active::after {
+            left: -2px;
+            text-shadow: -2px 0 #00e5ff;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim2 2.5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(12px, 9999px, 52px, 0); transform: skew(0.3deg); }
+            20% { clip: rect(78px, 9999px, 12px, 0); transform: skew(0.8deg); }
+            40% { clip: rect(32px, 9999px, 89px, 0); transform: skew(0.1deg); }
+            60% { clip: rect(90px, 9999px, 5px, 0); transform: skew(0.5deg); }
+            80% { clip: rect(15px, 9999px, 60px, 0); transform: skew(0.2deg); }
+            100% { clip: rect(48px, 9999px, 30px, 0); transform: skew(0.6deg); }
+        }
+
+        @keyframes glitch-anim2 {
+            0% { clip: rect(60px, 9999px, 10px, 0); transform: skew(0.2deg); }
+            20% { clip: rect(10px, 9999px, 80px, 0); transform: skew(0.5deg); }
+            40% { clip: rect(45px, 9999px, 20px, 0); transform: skew(0.9deg); }
+            60% { clip: rect(2px, 9999px, 95px, 0); transform: skew(0.1deg); }
+            80% { clip: rect(80px, 9999px, 35px, 0); transform: skew(0.4deg); }
+            100% { clip: rect(25px, 9999px, 50px, 0); transform: skew(0.7deg); }
+        }
+
+        /* Post-processing SVG overlay filters */
+        .vignette-overlay {
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            background: radial-gradient(circle, transparent 40%, rgba(5, 5, 12, 0.8) 90%);
+            transition: background 0.5s ease;
+        }
+
+        .high-degradation {
+            background: radial-gradient(circle, rgba(120, 0, 50, 0.15) 20%, rgba(10, 0, 20, 0.95) 85%);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 select-none overflow-hidden">
+
+    <div id="canvas-container"></div>
+    <canvas id="analog-noise-canvas"></canvas>
+    <div id="vignette" class="vignette-overlay"></div>
+    <div id="crt-lines" class="crt-overlay"></div>
+
+    <!-- Analog Horror Timestamp & Recording Indicator -->
+    <div id="analog-hud" class="absolute top-4 right-6 z-20 pointer-events-none text-right font-mono text-xs text-red-500/80 tracking-widest hidden">
+        <div class="flex items-center justify-end gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-600 animate-ping"></span>
+            <span class="font-bold text-red-400">REC [TAPE 1994]</span>
+        </div>
+        <div id="analog-time" class="text-[11px] text-slate-400 mt-0.5">03:14:22 AM - SIGNAL WEAK</div>
+    </div>
+
+    <!-- MAIN HUD UI -->
+    <div class="relative z-20 pointer-events-none w-full h-full flex flex-col justify-between p-4 sm:p-6 box-border">
+        
+        <!-- Top Bar: Title, Lucidity Status, & Mini Map Container -->
+        <div class="flex justify-between items-start w-full">
+            <div class="bg-slate-900/80 backdrop-blur-md p-3 sm:p-4 rounded-xl border border-slate-700/50 shadow-2xl max-w-xs sm:max-w-sm pointer-events-auto">
+                <h1 id="ui-title" class="text-lg sm:text-xl font-bold tracking-wider cinzel text-amber-200 flex items-center gap-2">
+                    <i class="fa-solid fa-brain text-amber-400"></i> Echoes of Memory
+                </h1>
+                <p id="ui-subtitle" class="text-xs text-slate-400 mt-1 italic">Navigate the labyrinth of a fading mind.</p>
+
+                <!-- Lucidity Meter -->
+                <div class="mt-3">
+                    <div class="flex justify-between text-xs font-semibold mb-1">
+                        <span id="lucidity-label" class="text-slate-300">Lucidity Level</span>
+                        <span id="lucidity-val" class="mono text-amber-400">100%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                        <div id="lucidity-bar" class="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-400 rounded-full transition-all duration-300" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Coin Inventory / Status -->
+                <div class="mt-2.5 flex items-center justify-between text-xs bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-coins text-yellow-400 text-sm animate-pulse"></i>
+                        <span id="coin-label" class="text-slate-300 font-medium">Knowledge Coins:</span>
+                    </div>
+                    <span id="coin-count" class="mono font-bold text-base text-amber-300">0</span>
+                </div>
+            </div>
+
+            <!-- Mini Map & Thought Log -->
+            <div class="flex flex-col items-end gap-2 pointer-events-auto">
+                <div class="bg-slate-900/80 backdrop-blur-md p-2 rounded-xl border border-slate-700/50 shadow-2xl relative overflow-hidden">
+                    <canvas id="minimap" width="120" height="120" class="rounded-lg bg-slate-950"></canvas>
+                    <div class="absolute bottom-2 left-2 text-[9px] mono text-slate-400 bg-slate-900/80 px-1 py-0.5 rounded">
+                        RADAR
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Notification Prompt / Dialogue -->
+        <div id="dialogue-container" class="self-center text-center max-w-lg transition-all duration-500 opacity-0 transform translate-y-4 px-2">
+            <div class="bg-slate-900/90 backdrop-blur-lg border border-amber-500/40 px-5 py-3.5 rounded-2xl shadow-2xl relative">
+                <i class="fa-solid fa-quote-left absolute top-2 left-3 text-amber-500/20 text-xl"></i>
+                <p id="dialogue-text" class="text-xs sm:text-sm italic font-serif text-slate-200 tracking-wide px-3">
+                    "Everything feels familiar, yet none of it belongs..."
+                </p>
+            </div>
+        </div>
+
+        <!-- Bottom Bar: Touch Controls & Action Button -->
+        <div class="flex justify-between items-end w-full">
+            <!-- Mobile Touch D-Pad Joystick -->
+            <div id="touch-joystick-zone" class="pointer-events-auto relative w-32 h-32 bg-slate-900/60 backdrop-blur-sm rounded-full border border-slate-700/50 flex items-center justify-center touch-none shadow-xl">
+                <div id="joystick-knob" class="w-12 h-12 bg-amber-500/80 rounded-full border-2 border-amber-200 shadow-md transform transition-transform duration-75"></div>
+                <div class="absolute text-[10px] mono text-slate-400/70 top-1">MOVE</div>
+            </div>
+
+            <!-- Controls Guide (Desktop) -->
+            <div class="hidden md:flex bg-slate-900/70 backdrop-blur-md p-3 rounded-xl border border-slate-800 text-xs text-slate-400 flex-col gap-1 pointer-events-auto shadow-lg">
+                <div class="font-semibold text-slate-300 border-b border-slate-800 pb-1 mb-0.5 flex items-center gap-1.5">
+                    <i class="fa-solid fa-gamepad text-amber-400"></i> Navigation & Camera
+                </div>
+                <div><span class="mono bg-slate-800 px-1 py-0.5 rounded border border-slate-700 text-slate-200">WASD / Touch D-Pad</span> : Move</div>
+                <div><span class="mono bg-slate-800 px-1 py-0.5 rounded border border-slate-700 text-slate-200">Drag Screen</span> : Rotate Camera 360°</div>
+                <div><span class="mono bg-slate-800 px-1 py-0.5 rounded border border-slate-700 text-slate-200">SPACE / Tap Button</span> : Consume Coin</div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="flex flex-col items-center gap-2 pointer-events-auto">
+                <button id="use-coin-btn" onclick="useMemoryCoin()" class="group relative px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none flex items-center gap-2">
+                    <i class="fa-solid fa-sparkles text-slate-950 group-hover:rotate-12 transition-transform text-sm"></i>
+                    <span id="btn-text" class="text-xs sm:text-sm">RETAIN CLARITY</span>
+                    <span class="text-[10px] bg-slate-950/20 px-1.5 py-0.5 rounded mono font-normal">[SPACE]</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State Variables
+        const gameState = {
+            lucidity: 100, // 0 to 100
+            maxLucidity: 100,
+            coinsCollected: 0,
+            degradationSpeed: 2.2, // Lucidity drop rate per second
+            isLucidityBoostActive: false,
+            lucidityBoostTimer: 0,
+            distortionLevel: 0, // 0 to 1
+            playerPos: new THREE.Vector3(0, 0, 0),
+            playerYaw: 0, // Horizontal camera angle
+            playerPitch: 0.35, // Vertical camera angle
+            time: 0,
+            keys: {},
+            touchMoveVector: { x: 0, y: 0 }
+        };
+
+        // Thoughts with Indigenous / Ancestral Language roots deteriorating into blabber
+        const thoughtsIndigenous = [
+            "Ina, ama... where is our ancestral home?",
+            "The elders spoke of the river spirit... Ruma... Kuta...",
+            "I remember the green hill where our community gathered for harvest.",
+            "My mother's song was called 'Mara Utama'... why can't I sing the words?",
+            "The ancient sacred trees used to shade our village path."
+        ];
+
+        const thoughtsConfusedBlabber = [
+            "Ina... r-ruma... what was the word for home? B-blab... k'thrr?",
+            "The sky is bleeding numbers... where did my family go?",
+            "Why is the sign written in distorted ancient symbols? I̷n̷a̷... A̶m̵a̶?",
+            "Blabber... void... 0x404_LANGUAGE_NOT_FOUND...",
+            "Who stole my mother's language? R̶u̷m̶a̵? K̷u̷t̷a̷? None of this makes sense!",
+            "I am speaking words that don't belong to any living human tribe...",
+            "F-f-forgetting... the syllables are melting into static!"
+        ];
+
+        // Scramble / Degrade text into indigenous blabber & zalgo gibberish
+        function applyLanguageDegradation(text, level) {
+            if (level < 0.15) return text;
+            
+            const zalgoChars = ["̶", "̷", "̸", "̵", "̶", "̡", "̢", "̧", "̨", "̛", "̖", "̗", "̘", "̙", "̜", "̝", "̞"];
+            const blabberWords = ["b-blab", "k'thrr", "null", "v-void", "a̷m̷a̷?", "i̷n̷a̷", "r̶u̷m̶a̵", "k̷u̷t̷a̷", "z̷a̷l̷g̷o̷", "???", "blabber"];
+            
+            let words = text.split(" ");
+            return words.map(w => {
+                if (Math.random() < level * 0.7) {
+                    if (Math.random() < 0.4) {
+                        return blabberWords[Math.floor(Math.random() * blabberWords.length)];
+                    } else {
+                        let glitched = "";
+                        for (let i = 0; i < w.length; i++) {
+                            const c = w[i];
+                            if (Math.random() < level * 0.8) {
+                                const zalgo = zalgoChars[Math.floor(Math.random() * zalgoChars.length)];
+                                glitched += c + zalgo;
+                            } else {
+                                glitched += c;
+                            }
+                        }
+                        return glitched;
+                    }
+                }
+                return w;
+            }).join(" ");
+        }
+
+        let scene, camera, renderer, clock;
+        let playerMesh;
+        let groundMesh, groundGrid;
+        let environmentObjects = [];
+        let surrealObjects = [];
+        let coinObjects = [];
+        let particleSystem;
+        let dirLight, hemiLight, ambientLight;
+
+        // Visual textures generated dynamically
+        let missingTextureCanvas, errorSignTexture, memeTexture1;
+
+        function createProceduralTextures() {
+            // 1. Missing Texture Pattern (Pink/Black Checkerboard)
+            const canvas1 = document.createElement('canvas');
+            canvas1.width = 128; canvas1.height = 128;
+            const ctx1 = canvas1.getContext('2d');
+            ctx1.fillStyle = '#ff007f'; ctx1.fillRect(0, 0, 128, 128);
+            ctx1.fillStyle = '#000000'; ctx1.fillRect(0, 0, 64, 64); ctx1.fillRect(64, 64, 64, 64);
+            missingTextureCanvas = new THREE.CanvasTexture(canvas1);
+            missingTextureCanvas.wrapS = THREE.RepeatWrapping;
+            missingTextureCanvas.wrapT = THREE.RepeatWrapping;
+
+            // 2. Error Web Sign
+            const canvas2 = document.createElement('canvas');
+            canvas2.width = 256; canvas2.height = 256;
+            const ctx2 = canvas2.getContext('2d');
+            ctx2.fillStyle = '#0f0f15'; ctx2.fillRect(0, 0, 256, 256);
+            ctx2.strokeStyle = '#ff0033'; ctx2.lineWidth = 10; ctx2.strokeRect(10, 10, 236, 236);
+            ctx2.fillStyle = '#ff0033'; ctx2.font = 'bold 26px sans-serif'; ctx2.textAlign = 'center';
+            ctx2.fillText('MEMORY CORRUPT', 128, 70);
+            ctx2.fillStyle = '#ffffff'; ctx2.font = '16px monospace';
+            ctx2.fillText('LANGUAGE_LOST.SYS', 128, 120);
+            ctx2.fillText('ANCESTRAL_DATA_404', 128, 160);
+            errorSignTexture = new THREE.CanvasTexture(canvas2);
+
+            // 3. Glitched Surreal Object Texture
+            const canvas3 = document.createElement('canvas');
+            canvas3.width = 256; canvas3.height = 256;
+            const ctx3 = canvas3.getContext('2d');
+            ctx3.fillStyle = '#00f0ff'; ctx3.fillRect(0, 0, 256, 256);
+            ctx3.fillStyle = '#ff0055'; ctx3.beginPath(); ctx3.arc(128, 128, 80, 0, Math.PI * 2); ctx3.fill();
+            ctx3.fillStyle = '#ffff00'; ctx3.font = 'bold 22px monospace'; ctx3.textAlign = 'center';
+            ctx3.fillText('FORGOTTEN', 128, 70);
+            ctx3.fillText('BLABBER VOID', 128, 190);
+            memeTexture1 = new THREE.CanvasTexture(canvas3);
+        }
+
+        function initScene() {
+            const container = document.getElementById('canvas-container');
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0c16);
+            scene.fog = new THREE.FogExp2(0x0a0c16, 0.015);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            clock = new THREE.Clock();
+
+            // Lighting
+            ambientLight = new THREE.AmbientLight(0xddeeff, 0.6);
+            scene.add(ambientLight);
+
+            hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 0.4);
+            hemiLight.position.set(0, 50, 0);
+            scene.add(hemiLight);
+
+            dirLight = new THREE.DirectionalLight(0xfffaed, 1.2);
+            dirLight.position.set(30, 50, 20);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+
+            createProceduralTextures();
+            buildGround();
+            buildPlayer();
+            buildNormalEnvironment();
+            buildSurrealEnvironment();
+            spawnMemoryCoins(10);
+            initParticleSystem();
+
+            window.addEventListener('resize', onWindowResize, false);
+            setupControls();
+            initAnalogHorrorCanvas();
+        }
+
+        function buildGround() {
+            const groundGeo = new THREE.PlaneGeometry(320, 320, 32, 32);
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x2d4c2e, roughness: 0.8 });
+            groundMesh = new THREE.Mesh(groundGeo, groundMat);
+            groundMesh.rotation.x = -Math.PI / 2;
+            groundMesh.receiveShadow = true;
+            scene.add(groundMesh);
+
+            const gridGeo = new THREE.PlaneGeometry(320, 320, 64, 64);
+            const gridMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.0 });
+            groundGrid = new THREE.Mesh(gridGeo, gridMat);
+            groundGrid.rotation.x = -Math.PI / 2;
+            groundGrid.position.y = 0.02;
+            scene.add(groundGrid);
+        }
+
+        function buildPlayer() {
+            const playerGroup = new THREE.Group();
+
+            const bodyGeo = new THREE.CylinderGeometry(0.5, 0.4, 1.6, 16);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.5 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.8;
+            body.castShadow = true;
+            playerGroup.add(body);
+
+            const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.3 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 1.8;
+            head.castShadow = true;
+            playerGroup.add(head);
+
+            const playerLight = new THREE.PointLight(0xfff0aa, 1.4, 14);
+            playerLight.position.y = 2;
+            playerGroup.add(playerLight);
+
+            playerMesh = playerGroup;
+            scene.add(playerMesh);
+        }
+
+        function buildNormalEnvironment() {
+            const treeGeo = new THREE.ConeGeometry(2, 6, 8);
+            const trunkGeo = new THREE.CylinderGeometry(0.4, 0.5, 2, 8);
+            const treeMat = new THREE.MeshStandardMaterial({ color: 0x1e5631, roughness: 0.7 });
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+
+            const houseGeo = new THREE.BoxGeometry(6, 4, 6);
+            const houseMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6 });
+            const roofGeo = new THREE.ConeGeometry(5, 3, 4);
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0x991b1b });
+
+            const positions = [
+                { x: -15, z: -20, type: 'tree' }, { x: -25, z: -10, type: 'tree' },
+                { x: 18, z: -25, type: 'tree' }, { x: 30, z: -15, type: 'tree' },
+                { x: -35, z: 20, type: 'tree' }, { x: 25, z: 30, type: 'tree' },
+                { x: -20, z: -35, type: 'house' }, { x: 20, z: -40, type: 'house' },
+                { x: -40, z: 10, type: 'house' }, { x: 35, z: 15, type: 'house' }
+            ];
+
+            positions.forEach((p) => {
+                const group = new THREE.Group();
+                group.position.set(p.x, 0, p.z);
+
+                if (p.type === 'tree') {
+                    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+                    trunk.position.y = 1; trunk.castShadow = true; group.add(trunk);
+                    const foliage = new THREE.Mesh(treeGeo, treeMat);
+                    foliage.position.y = 4; foliage.castShadow = true; group.add(foliage);
+                } else if (p.type === 'house') {
+                    const house = new THREE.Mesh(houseGeo, houseMat);
+                    house.position.y = 2; house.castShadow = true; group.add(house);
+                    const roof = new THREE.Mesh(roofGeo, roofMat);
+                    roof.position.y = 5.5; roof.rotation.y = Math.PI / 4; roof.castShadow = true; group.add(roof);
+                }
+
+                group.userData = {
+                    initialPos: group.position.clone(),
+                    initialRot: group.rotation.clone(),
+                    type: p.type
+                };
+
+                environmentObjects.push(group);
+                scene.add(group);
+            });
+        }
+
+        function buildSurrealEnvironment() {
+            const surrealCoords = [
+                { x: -12, z: -12 }, { x: 15, z: -18 }, { x: -28, z: 5 },
+                { x: 22, z: 8 }, { x: -5, z: 28 }, { x: 12, z: 35 },
+                { x: -30, z: -30 }, { x: 30, z: -20 }, { x: 0, z: -45 }
+            ];
+
+            surrealCoords.forEach((c, idx) => {
+                const group = new THREE.Group();
+                group.position.set(c.x, 2, c.z);
+
+                let mesh;
+                if (idx % 3 === 0) {
+                    mesh = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.5, 2.5), new THREE.MeshBasicMaterial({ map: missingTextureCanvas }));
+                } else if (idx % 3 === 1) {
+                    mesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial({ map: errorSignTexture, side: THREE.DoubleSide }));
+                } else {
+                    mesh = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 0.2), new THREE.MeshBasicMaterial({ map: memeTexture1 }));
+                }
+
+                group.add(mesh);
+                group.visible = false;
+                group.userData = { floatSpeed: 1 + Math.random() * 2, rotSpeed: 0.5 + Math.random() * 1.5, baseY: 2 + Math.random() * 3 };
+
+                surrealObjects.push(group);
+                scene.add(group);
+            });
+        }
+
+        function spawnMemoryCoins(count) {
+            const coinGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.2, 24);
+            const coinMat = new THREE.MeshStandardMaterial({
+                color: 0xfacc15, metalness: 0.9, roughness: 0.1, emissive: 0x854d0e, emissiveIntensity: 0.6
+            });
+
+            for (let i = 0; i < count; i++) {
+                const coinGroup = new THREE.Group();
+                const coin = new THREE.Mesh(coinGeo, coinMat);
+                coin.rotation.x = Math.PI / 2;
+                coin.castShadow = true;
+                coinGroup.add(coin);
+
+                const light = new THREE.PointLight(0xfacc15, 1.5, 6);
+                coinGroup.add(light);
+
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 10 + Math.random() * 50;
+                coinGroup.position.set(Math.cos(angle) * radius, 1.2, Math.sin(angle) * radius);
+
+                coinGroup.userData = { active: true, rotSpeed: 2.0, bobSpeed: 3.0, baseY: 1.2 };
+                coinObjects.push(coinGroup);
+                scene.add(coinGroup);
+            }
+        }
+
+        function initParticleSystem() {
+            const particleCount = 200;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 140;
+                positions[i + 1] = Math.random() * 20;
+                positions[i + 2] = (Math.random() - 0.5) * 140;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleSystem = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0xfef08a, size: 0.3, transparent: true, opacity: 0.6 }));
+            scene.add(particleSystem);
+        }
+
+        function setupControls() {
+            // Keyboard Listener
+            window.addEventListener('keydown', (e) => {
+                gameState.keys[e.key.toLowerCase()] = true;
+                if (e.key === ' ' || e.key.toLowerCase() === 'e') {
+                    useMemoryCoin();
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                gameState.keys[e.key.toLowerCase()] = false;
+            });
+
+            // Camera Orbit Rotation (Mouse & Touch Drag)
+            let isDragging = false;
+            let prevPointerX = 0;
+            let prevPointerY = 0;
+
+            const onPointerDown = (e) => {
+                // Avoid dragging when interacting with virtual joystick or buttons
+                if (e.target.closest('#touch-joystick-zone') || e.target.closest('button')) return;
+                isDragging = true;
+                prevPointerX = e.clientX || (e.touches && e.touches[0].clientX);
+                prevPointerY = e.clientY || (e.touches && e.touches[0].clientY);
+            };
+
+            const onPointerMove = (e) => {
+                if (!isDragging) return;
+                const currentX = e.clientX || (e.touches && e.touches[0].clientX);
+                const currentY = e.clientY || (e.touches && e.touches[0].clientY);
+
+                const deltaX = currentX - prevPointerX;
+                const deltaY = currentY - prevPointerY;
+
+                gameState.playerYaw -= deltaX * 0.005; // Horizontal camera angle
+                gameState.playerPitch += deltaY * 0.003; // Vertical camera pitch
+                gameState.playerPitch = Math.max(0.1, Math.min(Math.PI / 2.2, gameState.playerPitch)); // Clamped pitch
+
+                prevPointerX = currentX;
+                prevPointerY = currentY;
+            };
+
+            const onPointerUp = () => { isDragging = false; };
+
+            window.addEventListener('mousedown', onPointerDown);
+            window.addEventListener('mousemove', onPointerMove);
+            window.addEventListener('mouseup', onPointerUp);
+
+            window.addEventListener('touchstart', onPointerDown, { passive: true });
+            window.addEventListener('touchmove', onPointerMove, { passive: true });
+            window.addEventListener('touchend', onPointerUp);
+
+            // Touch Screen Virtual Joystick
+            setupTouchJoystick();
+        }
+
+        function setupTouchJoystick() {
+            const zone = document.getElementById('touch-joystick-zone');
+            const knob = document.getElementById('joystick-knob');
+            let joystickActive = false;
+            let startX = 0, startY = 0;
+            const maxRadius = 40;
+
+            const handleStart = (e) => {
+                joystickActive = true;
+                const touch = e.touches ? e.touches[0] : e;
+                const rect = zone.getBoundingClientRect();
+                startX = rect.left + rect.width / 2;
+                startY = rect.top + rect.height / 2;
+                handleMove(e);
+            };
+
+            const handleMove = (e) => {
+                if (!joystickActive) return;
+                const touch = e.touches ? e.touches[0] : e;
+                let dx = touch.clientX - startX;
+                let dy = touch.clientY - startY;
+
+                const dist = Math.hypot(dx, dy);
+                if (dist > maxRadius) {
+                    dx = (dx / dist) * maxRadius;
+                    dy = (dy / dist) * maxRadius;
+                }
+
+                knob.style.transform = `translate(${dx}px, ${dy}px)`;
+
+                // Normalized movement vector (-1 to 1)
+                gameState.touchMoveVector.x = dx / maxRadius;
+                gameState.touchMoveVector.y = dy / maxRadius;
+            };
+
+            const handleEnd = () => {
+                joystickActive = false;
+                knob.style.transform = `translate(0px, 0px)`;
+                gameState.touchMoveVector.x = 0;
+                gameState.touchMoveVector.y = 0;
+            };
+
+            zone.addEventListener('touchstart', handleStart, { passive: true });
+            zone.addEventListener('touchmove', handleMove, { passive: true });
+            zone.addEventListener('touchend', handleEnd);
+            zone.addEventListener('mousedown', handleStart);
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+        }
+
+        function initAnalogHorrorCanvas() {
+            const canvas = document.getElementById('analog-noise-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const resize = () => {
+                canvas.width = window.innerWidth / 2; // Render lower res for retro feel & performance
+                canvas.height = window.innerHeight / 2;
+            };
+            resize();
+            window.addEventListener('resize', resize);
+
+            let frame = 0;
+            function drawAnalogHorror() {
+                requestAnimationFrame(drawAnalogHorror);
+                frame++;
+
+                if (gameState.distortionLevel < 0.2) {
+                    canvas.style.opacity = '0';
+                    document.getElementById('crt-lines').classList.remove('analog-flicker');
+                    document.getElementById('analog-hud').classList.add('hidden');
+                    return;
+                }
+
+                const dist = gameState.distortionLevel;
+                canvas.style.opacity = (dist * 0.75).toString();
+                document.getElementById('crt-lines').classList.add('analog-flicker');
+                
+                if (dist > 0.5) {
+                    document.getElementById('analog-hud').classList.remove('hidden');
+                    document.getElementById('analog-time').innerText = `03:14:${10 + (frame % 50)} AM - SIGNAL CORRUPT (${Math.round(dist * 100)}%)`;
+                }
+
+                const w = canvas.width;
+                const h = canvas.height;
+                const imgData = ctx.createImageData(w, h);
+                const buffer = new Uint32Array(imgData.data.buffer);
+
+                // Generate CRT static noise & analog glitch strips
+                for (let i = 0; i < buffer.length; i++) {
+                    if (Math.random() < dist * 0.3) {
+                        const val = Math.floor(Math.random() * 255);
+                        // Red-heavy creepy color palette in noise
+                        buffer[i] = (255 << 24) | (val << 16) | ((val / 2) << 8) | val;
+                    }
+                }
+                ctx.putImageData(imgData, 0, 0);
+
+                // Periodic eerie visual signal flash (creepy face / silhouette contours)
+                if (dist > 0.6 && Math.random() < 0.08) {
+                    ctx.fillStyle = `rgba(255, 0, 50, ${dist * 0.4})`;
+                    ctx.fillRect(0, Math.random() * h, w, Math.random() * 20);
+
+                    // Eerie eyes/silhouette flash
+                    ctx.fillStyle = '#ffffff';
+                    const cx = w / 2 + (Math.random() - 0.5) * 40;
+                    const cy = h / 2 + (Math.random() - 0.5) * 40;
+                    ctx.beginPath();
+                    ctx.arc(cx - 20, cy, 6, 0, Math.PI * 2);
+                    ctx.arc(cx + 20, cy, 6, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#ff0033';
+                    ctx.font = 'bold 16px monospace';
+                    ctx.fillText('LANGUAGE LOST', cx - 60, cy + 40);
+                }
+            }
+            drawAnalogHorror();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function useMemoryCoin() {
+            if (gameState.coinsCollected > 0) {
+                gameState.coinsCollected--;
+                gameState.lucidity = 100;
+                gameState.isLucidityBoostActive = true;
+                gameState.lucidityBoostTimer = 14;
+
+                updateUI();
+                showDialogue("The haze dissipates... I remember my native roots, my language, and my path!");
+                
+                const light = new THREE.PointLight(0xfacc15, 6, 35);
+                light.position.copy(playerMesh.position);
+                scene.add(light);
+                setTimeout(() => scene.remove(light), 1000);
+            } else {
+                showDialogue("No Memory Coins left... the language is dissolving into static!");
+            }
+        }
+
+        function triggerDialogueCheck() {
+            if (Math.random() < 0.006) {
+                if (gameState.distortionLevel > 0.4) {
+                    const rawThought = thoughtsConfusedBlabber[Math.floor(Math.random() * thoughtsConfusedBlabber.length)];
+                    showDialogue(applyLanguageDegradation(rawThought, gameState.distortionLevel));
+                } else {
+                    const rawThought = thoughtsIndigenous[Math.floor(Math.random() * thoughtsIndigenous.length)];
+                    showDialogue(rawThought);
+                }
+            }
+        }
+
+        function showDialogue(text) {
+            const container = document.getElementById('dialogue-container');
+            const el = document.getElementById('dialogue-text');
+            el.innerText = `"${text}"`;
+            container.classList.remove('opacity-0', 'translate-y-4');
+            container.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(container.userDataTimeout);
+            container.userDataTimeout = setTimeout(() => {
+                container.classList.remove('opacity-100', 'translate-y-0');
+                container.classList.add('opacity-0', 'translate-y-4');
+            }, 5500);
+        }
+
+        function updateEnvironmentDegradation(delta) {
+            if (gameState.isLucidityBoostActive) {
+                gameState.lucidityBoostTimer -= delta;
+                if (gameState.lucidityBoostTimer <= 0) gameState.isLucidityBoostActive = false;
+            } else {
+                gameState.lucidity = Math.max(0, gameState.lucidity - gameState.degradationSpeed * delta);
+            }
+
+            gameState.distortionLevel = 1.0 - (gameState.lucidity / 100.0);
+            const dist = gameState.distortionLevel;
+
+            // Fog & Lighting Shifting
+            scene.fog.color.lerpColors(new THREE.Color(0x0a0c16), new THREE.Color(0x2d0310), dist);
+            scene.background.copy(scene.fog.color);
+            ambientLight.intensity = 0.6 - dist * 0.45;
+
+            groundGrid.material.opacity = dist * 0.7;
+
+            // Environment Distortion
+            environmentObjects.forEach((obj, idx) => {
+                const initPos = obj.userData.initialPos;
+                const initRot = obj.userData.initialRot;
+
+                if (dist > 0.2) {
+                    const noise = Math.sin(gameState.time * 2 + idx) * dist * 3.5;
+                    obj.position.x = initPos.x + noise;
+                    obj.position.y = initPos.y + (Math.cos(gameState.time + idx) * dist * 1.8);
+                    obj.rotation.z = initRot.z + (Math.sin(gameState.time + idx) * dist * 0.5);
+                    obj.rotation.y = initRot.y + (dist * Math.PI * 0.3);
+                } else {
+                    obj.position.lerp(initPos, 0.1);
+                    obj.rotation.set(initRot.x, initRot.y, initRot.z);
+                }
+            });
+
+            // Surreal Internet Objects Visibility
+            surrealObjects.forEach((obj) => {
+                if (dist > 0.25) {
+                    obj.visible = true;
+                    const u = obj.userData;
+                    obj.position.y = u.baseY + Math.sin(gameState.time * u.floatSpeed) * 1.2;
+                    obj.rotation.x += delta * u.rotSpeed;
+                    obj.rotation.y += delta * u.rotSpeed;
+                } else {
+                    obj.visible = false;
+                }
+            });
+
+            updateUI();
+        }
+
+        function updatePlayerMovement(delta) {
+            const moveSpeed = 8.5;
+            const moveDir = new THREE.Vector3();
+
+            // Keyboard input
+            if (gameState.keys['w'] || gameState.keys['arrowup']) moveDir.z -= 1;
+            if (gameState.keys['s'] || gameState.keys['arrowdown']) moveDir.z += 1;
+            if (gameState.keys['a'] || gameState.keys['arrowleft']) moveDir.x -= 1;
+            if (gameState.keys['d'] || gameState.keys['arrowright']) moveDir.x += 1;
+
+            // Touch Joystick Input
+            if (Math.abs(gameState.touchMoveVector.x) > 0.05 || Math.abs(gameState.touchMoveVector.y) > 0.05) {
+                moveDir.x = gameState.touchMoveVector.x;
+                moveDir.z = gameState.touchMoveVector.y;
+            }
+
+            if (moveDir.lengthSq() > 0) {
+                moveDir.normalize();
+                // Orient movement direction relative to camera pitch/yaw angle
+                moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), gameState.playerYaw);
+
+                playerMesh.position.addScaledVector(moveDir, moveSpeed * delta);
+
+                const targetAngle = Math.atan2(moveDir.x, moveDir.z);
+                playerMesh.rotation.y = targetAngle;
+            }
+
+            // Map Bounds
+            const bound = 140;
+            playerMesh.position.x = Math.max(-bound, Math.min(bound, playerMesh.position.x));
+            playerMesh.position.z = Math.max(-bound, Math.min(bound, playerMesh.position.z));
+
+            // Camera Orbit Tracking with 360 Pitch & Yaw
+            const distance = 11;
+            const camX = playerMesh.position.x + distance * Math.sin(gameState.playerYaw) * Math.cos(gameState.playerPitch);
+            const camY = playerMesh.position.y + distance * Math.sin(gameState.playerPitch) + 1.5;
+            const camZ = playerMesh.position.z + distance * Math.cos(gameState.playerYaw) * Math.cos(gameState.playerPitch);
+
+            camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.15);
+            camera.lookAt(playerMesh.position.clone().add(new THREE.Vector3(0, 1.4, 0)));
+
+            // Coin pickups
+            coinObjects.forEach((coinGroup) => {
+                if (coinGroup.userData.active) {
+                    const u = coinGroup.userData;
+                    coinGroup.children[0].rotation.z += delta * u.rotSpeed;
+                    coinGroup.position.y = u.baseY + Math.sin(gameState.time * u.bobSpeed) * 0.3;
+
+                    if (playerMesh.position.distanceTo(coinGroup.position) < 2.2) {
+                        coinGroup.userData.active = false;
+                        coinGroup.visible = false;
+                        gameState.coinsCollected++;
+                        showDialogue("Found a Knowledge Coin! Press SPACE or tap button to restore indigenous language.");
+
+                        setTimeout(() => {
+                            const angle = Math.random() * Math.PI * 2;
+                            const radius = 15 + Math.random() * 45;
+                            coinGroup.position.set(playerMesh.position.x + Math.cos(angle) * radius, 1.2, playerMesh.position.z + Math.sin(angle) * radius);
+                            coinGroup.userData.active = true;
+                            coinGroup.visible = true;
+                        }, 14000);
+                    }
+                }
+            });
+        }
+
+        function updateUI() {
+            const bar = document.getElementById('lucidity-bar');
+            const val = document.getElementById('lucidity-val');
+            const coinCount = document.getElementById('coin-count');
+            const lucidityLabel = document.getElementById('lucidity-label');
+            const useBtn = document.getElementById('use-coin-btn');
+            const titleEl = document.getElementById('ui-title');
+            const subtitleEl = document.getElementById('ui-subtitle');
+            const btnText = document.getElementById('btn-text');
+
+            const luc = Math.round(gameState.lucidity);
+            const dist = gameState.distortionLevel;
+            val.innerText = `${luc}%`;
+            bar.style.width = `${luc}%`;
+
+            // UI Text Degradation into Indigenous Blabber
+            if (dist > 0.35) {
+                titleEl.innerText = applyLanguageDegradation("Echoes of Memory", dist);
+                subtitleEl.innerText = applyLanguageDegradation("Language melting into static...", dist);
+                lucidityLabel.innerText = applyLanguageDegradation("Lucidity (Fading)", dist);
+                btnText.innerText = applyLanguageDegradation("RETAIN CLARITY", dist);
+            } else {
+                titleEl.innerHTML = '<i class="fa-solid fa-brain text-amber-400"></i> Echoes of Memory';
+                subtitleEl.innerText = "Navigate the labyrinth of a fading mind.";
+                lucidityLabel.innerText = "Lucidity Level";
+                btnText.innerText = "RETAIN CLARITY";
+            }
+
+            if (gameState.isLucidityBoostActive) {
+                bar.className = "h-full bg-gradient-to-r from-yellow-300 to-amber-400 rounded-full animate-pulse";
+            } else if (luc < 30) {
+                bar.className = "h-full bg-gradient-to-r from-red-600 to-rose-500 rounded-full";
+            } else {
+                bar.className = "h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-400 rounded-full";
+            }
+
+            coinCount.innerText = gameState.coinsCollected;
+            useBtn.disabled = gameState.coinsCollected <= 0;
+
+            drawMinimap();
+        }
+
+        function drawMinimap() {
+            const canvas = document.getElementById('minimap');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            const center = w / 2;
+            const scale = 1.1;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Radar grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+            ctx.beginPath(); ctx.arc(center, center, 25, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(center, center, 50, 0, Math.PI * 2); ctx.stroke();
+
+            // Player dot
+            ctx.fillStyle = '#60a5fa';
+            ctx.beginPath(); ctx.arc(center, center, 4, 0, Math.PI * 2); ctx.fill();
+
+            // Orientation line
+            ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(center, center);
+            ctx.lineTo(center + Math.sin(gameState.playerYaw) * 10, center - Math.cos(gameState.playerYaw) * 10);
+            ctx.stroke();
+
+            // Coins
+            coinObjects.forEach(coin => {
+                if (coin.userData.active) {
+                    const dx = (coin.position.x - playerMesh.position.x) * scale;
+                    const dz = (coin.position.z - playerMesh.position.z) * scale;
+                    if (Math.hypot(dx, dz) < center - 4) {
+                        ctx.fillStyle = '#facc15';
+                        ctx.beginPath(); ctx.arc(center + dx, center + dz, 3, 0, Math.PI * 2); ctx.fill();
+                    }
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = Math.min(clock.getDelta(), 0.1);
+            gameState.time += delta;
+
+            updatePlayerMovement(delta);
+            updateEnvironmentDegradation(delta);
+            triggerDialogueCheck();
+
+            if (particleSystem) particleSystem.rotation.y += delta * 0.05;
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function() {
+            initScene();
+            animate();
+            
+            setTimeout(() => {
+                showDialogue("My native language feels distant... Collect Knowledge Coins before the memories fade into blabber.");
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
